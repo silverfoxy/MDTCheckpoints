@@ -27,6 +27,12 @@ A Mythic+ overlay that shows boss % gates from your [Mythic Dungeon Tools](https
 2. Place it in `World of Warcraft/_retail_/Interface/AddOns/`
 3. Enable it in the WoW addon list
 
+## Screenshot (next to MythicPlusTimer)
+
+<p align="center">
+  <img src="mdtcp.png" width="400" alt="MDT Checkpoints icon" />
+</p>
+
 ## Slash Commands
 
 | Command | Description |
