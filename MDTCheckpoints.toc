@@ -1,0 +1,9 @@
+## Interface: 120005
+## Title: MDT Checkpoints
+## Notes: Boss % gate overlay. Anchors to MythicPlusTimer if loaded. Reads route from MDT.
+## Version: 1.0.0
+## OptionalDeps: MythicDungeonTools, MythicPlusTimer
+## SavedVariables: MDTCheckpointsDB
+## IconTexture: Interface\AddOns\MDTCheckpoints\MDTCheckpoints
+
+MDTCheckpoints.lua
