@@ -23,11 +23,29 @@ local frame, pctText, titleText, toggleBtnText, cpRows
 -- ── Scenario % ────────────────────────────────────────────────────────────────
 local function GetForcesPct()
     if not C_Scenario.IsInScenario() then return 0 end
+
     local _, _, numCriteria = C_Scenario.GetStepInfo()
     for i = 1, (numCriteria or 0) do
-        local info = C_Scenario.GetCriteriaInfo(i)
-        if info and (info.totalQuantity or 0) > 0 then
-            return info.quantity / info.totalQuantity * 100
+        local criteriaInfo = C_ScenarioInfo.GetCriteriaInfo(i)
+        if criteriaInfo and criteriaInfo.isWeightedProgress then
+            -- Enemy forces criteria found
+            local cur_value = criteriaInfo.quantity
+            local is_percent_value = criteriaInfo.isWeightedProgress
+
+            -- Handle percentage string format (e.g., "45%")
+            if criteriaInfo.isWeightedProgress and criteriaInfo.quantityString then
+                cur_value = tonumber(string.sub(criteriaInfo.quantityString, 1, string.len(criteriaInfo.quantityString) - 1))
+                is_percent_value = false
+            end
+
+            local quantity_percent = 0
+            if is_percent_value then
+                quantity_percent = cur_value
+            else
+                quantity_percent = (cur_value / criteriaInfo.totalQuantity) * 100
+            end
+
+            return quantity_percent
         end
     end
     return 0
@@ -201,7 +219,14 @@ local function UpdateDisplay()
             frame:SetHeight(PAD + ROW_H + PAD)
         end
     else
-        frame:SetHeight(PAD + ROW_H + PAD/2 + MAX_CHECKPOINTS * ROW_H + PAD)
+        -- Calculate height based on actual number of checkpoints
+        local numCheckpoints = math.min(#checkpoints, MAX_CHECKPOINTS)
+        if numCheckpoints == 0 then
+            -- Minimum height when no checkpoints are loaded
+            frame:SetHeight(PAD + ROW_H + PAD)
+        else
+            frame:SetHeight(PAD + ROW_H + PAD/2 + numCheckpoints * ROW_H + PAD)
+        end
         for i, row in ipairs(cpRows) do
             local cp = checkpoints[i]
             if not cp then
@@ -696,6 +721,7 @@ events:RegisterEvent("CHALLENGE_MODE_START")
 events:RegisterEvent("CHALLENGE_MODE_RESET")
 events:RegisterEvent("CHALLENGE_MODE_COMPLETED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
+events:RegisterEvent("SCENARIO_CRITERIA_UPDATE")
 
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON then
@@ -732,6 +758,13 @@ events:SetScript("OnEvent", function(_, event, arg1)
                 UpdateDisplay()
             end
         end)
+
+    elseif event == "SCENARIO_CRITERIA_UPDATE" then
+        -- Update percentage when enemy forces change in M+
+        if isActive then
+            currentPct = GetForcesPct()
+            UpdateDisplay()
+        end
     end
 end)
 
