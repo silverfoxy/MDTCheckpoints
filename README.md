@@ -12,14 +12,12 @@ A Mythic+ overlay that shows boss % gates from your [Mythic Dungeon Tools](https
 - Tracks live forces % via `C_Scenario` and highlights the upcoming gate
 - Warns (orange `>>`) when you're within 8% of the next gate
 - Collapses to show only the next gate — right-click or use the `+/-` button
-- Anchors below MythicPlusTimer automatically if it's loaded, or floats standalone
 - Draggable, resizable, and lockable
 - Settings panel accessible via `/mdtcp config` or the WoW Settings menu
 
 ## Requirements
 
-- [Mythic Dungeon Tools](https://www.curseforge.com/wow/addons/mythic-dungeon-tools) (required for route data)
-- [MythicPlusTimer](https://www.curseforge.com/wow/addons/mythic-plus-timer) (optional, for auto-anchoring)
+- [Mythic Dungeon Tools](https://www.curseforge.com/wow/addons/mythic-dungeon-tools) (required)
 
 ## Installation
 
@@ -27,7 +25,7 @@ A Mythic+ overlay that shows boss % gates from your [Mythic Dungeon Tools](https
 2. Place it in `World of Warcraft/_retail_/Interface/AddOns/`
 3. Enable it in the WoW addon list
 
-## Screenshot (next to MythicPlusTimer)
+## Screenshot
 
 <p align="center">
   <img src="mdtcp.png" width="400" alt="MDT Checkpoints icon" />
@@ -37,11 +35,5 @@ A Mythic+ overlay that shows boss % gates from your [Mythic Dungeon Tools](https
 
 | Command | Description |
 |---|---|
-| `/mdtcp show` | Force show the frame |
 | `/mdtcp config` | Open settings panel |
-| `/mdtcp toggle` | Collapse / expand |
-| `/mdtcp size <n>` | Scale the frame (e.g. `0.8`, `1.2`) |
 | `/mdtcp reload` | Re-read route from MDT |
-| `/mdtcp reset` | Reset frame position |
-| `/mdtcp checkpoints` | Dump checkpoint % values to chat |
-| `/mdtcp debug` | Print MDT data diagnostics |

@@ -1,5 +1,4 @@
 -- MDTCheckpoints: boss % gate overlay for M+ runs
--- Anchors below MythicPlusTimer if present, else floats standalone.
 -- Reads route from MDT; live % from C_Scenario.
 
 MDTCheckpointsDB = {}
@@ -367,13 +366,10 @@ local function BuildFrame()
         cpRows[i] = row
     end
 
-    -- Anchor: below MythicPlusTimer if loaded, else top-right
-    local mpt = _G["MythicPlusTimer"]
+    -- Anchor: top-right or saved position
     local saved = MDTCheckpointsDB.point
     if saved then
         frame:SetPoint(unpack(saved))
-    elseif mpt then
-        frame:SetPoint("TOPLEFT", mpt, "BOTTOMLEFT", 0, -4)
     else
         frame:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -20, -200)
     end
@@ -785,162 +781,9 @@ SlashCmdList["MDTCP"] = function(msg)
                 settingsPanel:Show()
             end
         end
-    elseif msg == "toggle" then
-        isCollapsed = not isCollapsed
-        MDTCheckpointsDB.collapsed = isCollapsed
-        UpdateDisplay()
-        print("|cff00cc44[MDTCheckpoints]|r " .. (isCollapsed and "Collapsed." or "Expanded."))
-    elseif msg:match("^size") then
-        local n = tonumber(msg:match("^size%s+(.+)$"))
-        if n and n >= 0.4 and n <= 3.0 then
-            frame:SetScale(n)
-            MDTCheckpointsDB.scale = n
-            print(string.format("|cff00cc44[MDTCheckpoints]|r Scale set to %.2f.", n))
-        else
-            print("|cff00cc44[MDTCheckpoints]|r Usage: /mdtcp size <0.4-3.0>  (e.g. 1.2)")
-        end
-    elseif msg == "reset" then
-        MDTCheckpointsDB.point = nil
-        local mpt = _G["MythicPlusTimer"]
-        frame:ClearAllPoints()
-        if mpt then
-            frame:SetPoint("TOPLEFT", mpt, "BOTTOMLEFT", 0, -4)
-        else
-            frame:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -20, -200)
-        end
-        print("|cff00cc44[MDTCheckpoints]|r Position reset.")
-    elseif msg == "show" then
-        isActive = true
-        currentPct = GetForcesPct()
-        local ok, err = pcall(UpdateDisplay)
-        if not ok then
-            print("|cffff3333[MDTCheckpoints]|r UpdateDisplay error: " .. tostring(err))
-        end
-        if frame then
-            frame:Show()
-            frame:SetAlpha(1)
-            print(string.format(
-                "|cff00cc44[MDTCheckpoints]|r dungeon=%s cps=%d pct=%.1f%% frame=%s title=%s",
-                dungeonName, #checkpoints, currentPct,
-                tostring(frame ~= nil), tostring(titleText ~= nil)))
-        else
-            print("|cffff3333[MDTCheckpoints]|r frame is nil — try /reload")
-        end
-    elseif msg == "debug" then
-        print("|cff00cc44[MDTCheckpoints]|r MDT debug:")
-        if not MDT then print("  MDT: nil (not loaded)"); return end
-        print("  MDT: loaded")
-        -- Probe each db access path
-        print("  MDT.db type: " .. type(MDT.db))
-        if MDT.db then
-            print("  MDT.db.profile type: " .. type(MDT.db.profile))
-            print("  MDT.db.global  type: " .. type(MDT.db.global))
-        end
-        print("  MDT.GetDB exists: " .. tostring(MDT.GetDB ~= nil))
-        -- Resolve db using same fallback chain as LoadCheckpoints
-        local db = (MDT.GetDB and MDT:GetDB())
-               or (MDT.db and (MDT.db.profile or MDT.db.global or MDT.db))
-        if not db then print("  db: nil (all paths failed)"); return end
-        print("  db resolved, type: " .. type(db))
-        local dIdx = db.currentDungeonIdx
-        print("  currentDungeonIdx: " .. tostring(dIdx))
-        if not dIdx then return end
-        local preset = MDT:GetCurrentPreset()
-        if not preset then print("  GetCurrentPreset(): nil"); return end
-        print("  preset type: " .. type(preset))
-        print("  preset.value exists: " .. tostring(preset.value ~= nil))
-        local presetValue = preset.value or preset
-        local pulls = presetValue and presetValue.pulls
-        print("  pulls count: " .. tostring(pulls and #pulls or "nil"))
-        local enemies = MDT.dungeonEnemies and MDT.dungeonEnemies[dIdx]
-        print("  enemies table: " .. tostring(enemies ~= nil))
-        local totData = MDT.dungeonTotalCount and MDT.dungeonTotalCount[dIdx]
-        print("  totalCount: " .. tostring(totData and totData.normal or "nil"))
-        print("  checkpoints loaded: " .. #checkpoints)
-    elseif msg == "dumpraw" then
-        if not MDT then print("MDT not loaded"); return end
-        local db = (MDT.GetDB and MDT:GetDB())
-               or (MDT.db and (MDT.db.profile or MDT.db.global or MDT.db))
-        local dIdx = db and db.currentDungeonIdx
-        if not dIdx then print("no dungeonIdx"); return end
-        local preset = MDT:GetCurrentPreset()
-        local presetValue = preset and (preset.value or preset)
-        local pulls = presetValue and presetValue.pulls
-        if not pulls then print("no pulls"); return end
-        local enemies = MDT.dungeonEnemies and MDT.dungeonEnemies[dIdx]
-        local totData = MDT.dungeonTotalCount and MDT.dungeonTotalCount[dIdx]
-        local total = totData and totData.normal or 0
-        print(string.format("|cff00cc44[MDTCheckpoints]|r dumpraw: dIdx=%d total=%s #pulls=%d",
-            dIdx, tostring(total), #pulls))
-        local cumulative = 0
-        for pi = 1, #pulls do
-            local pull = pulls[pi]
-            if pull then
-                local pullCnt = 0
-                local bossNames = {}
-                for eIdx, clones in pairs(pull) do
-                    if type(clones) == "table" then
-                        local en = enemies and enemies[eIdx]
-                        if en then
-                            local contrib = (en.count or 0) * #clones
-                            pullCnt = pullCnt + contrib
-                            if en.isBoss then
-                                table.insert(bossNames, string.format("%s(cnt=%s,x%d)",
-                                    en.name or "?", tostring(en.count), #clones))
-                            end
-                        else
-                            table.insert(bossNames, string.format("UNKNOWN_e%s x%d", tostring(eIdx), #clones))
-                        end
-                    end
-                end
-                if #bossNames > 0 or pullCnt > 0 then
-                    print(string.format("  pull%d: pctBefore=%.4f%% cnt=%s boss=%s",
-                        pi, total > 0 and cumulative/total*100 or 0, tostring(pullCnt),
-                        #bossNames > 0 and table.concat(bossNames,", ") or "none"))
-                end
-                cumulative = cumulative + pullCnt
-            end
-        end
-        print(string.format("  total accumulated: %s / %s", tostring(cumulative), tostring(total)))
-    elseif msg == "checkpoints" then
-        if #checkpoints == 0 then
-            print("|cff00cc44[MDTCheckpoints]|r No checkpoints loaded. Run /mdtcp reload first.")
-        else
-            print("|cff00cc44[MDTCheckpoints]|r Checkpoints (" .. #checkpoints .. "):")
-            for i, cp in ipairs(checkpoints) do
-                print(string.format("  [%d] %.4f%% — %s%s", i, cp.pct, cp.label, cp.isMini and " (mini)" or ""))
-            end
-        end
-        -- Also dump raw MDT scale info
-        if MDT then
-            local db = (MDT.GetDB and MDT:GetDB())
-                   or (MDT.db and (MDT.db.profile or MDT.db.global or MDT.db))
-            local dIdx = db and db.currentDungeonIdx
-            if dIdx then
-                local totData = MDT.dungeonTotalCount and MDT.dungeonTotalCount[dIdx]
-                print("  dungeonTotal.normal = " .. tostring(totData and totData.normal))
-                local enemies = MDT.dungeonEnemies and MDT.dungeonEnemies[dIdx]
-                if enemies then
-                    local shown = 0
-                    for eIdx, en in pairs(enemies) do
-                        if en.isBoss and shown < 5 then
-                            print(string.format("  boss[%d] name=%s count=%s", eIdx, tostring(en.name), tostring(en.count)))
-                            shown = shown + 1
-                        end
-                    end
-                end
-            end
-        end
     else
         print("|cff00cc44[MDTCheckpoints]|r Commands:")
-        print("  /mdtcp show        — force show")
-        print("  /mdtcp config      — open settings panel")
-        print("  /mdtcp toggle      — collapse/expand (or right-click the frame)")
-        print("  /mdtcp size <n>    — scale frame (e.g. 0.8 or 1.2)")
-        print("  /mdtcp reload      — re-read route from MDT")
-        print("  /mdtcp checkpoints — dump checkpoint % values")
-        print("  /mdtcp dumpraw     — dump per-pull forces & boss data")
-        print("  /mdtcp debug       — print MDT data state")
-        print("  /mdtcp reset       — reset frame position")
+        print("  /mdtcp config — open settings panel")
+        print("  /mdtcp reload — re-read route from MDT")
     end
 end
