@@ -717,6 +717,7 @@ events:RegisterEvent("CHALLENGE_MODE_START")
 events:RegisterEvent("CHALLENGE_MODE_RESET")
 events:RegisterEvent("CHALLENGE_MODE_COMPLETED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
+events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 events:RegisterEvent("SCENARIO_CRITERIA_UPDATE")
 
 events:SetScript("OnEvent", function(_, event, arg1)
@@ -751,6 +752,20 @@ events:SetScript("OnEvent", function(_, event, arg1)
                 isActive = true
                 LoadCheckpoints()
                 currentPct = GetForcesPct()
+                UpdateDisplay()
+            end
+        end)
+
+    elseif event == "ZONE_CHANGED_NEW_AREA" then
+        -- Reload route when entering a new zone (e.g., entering a dungeon)
+        C_Timer.After(1, function()
+            if MDT and MDT:GetCurrentPreset() then
+                LoadCheckpoints()
+                -- Only activate if we're in an active M+ scenario
+                if C_Scenario.IsInScenario() then
+                    isActive = true
+                    currentPct = GetForcesPct()
+                end
                 UpdateDisplay()
             end
         end)

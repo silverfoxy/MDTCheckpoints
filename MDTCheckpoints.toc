@@ -2,7 +2,7 @@
 ## Title: MDT Checkpoints
 ## X-Curse-Project-ID: 1568259
 ## Notes: Boss % gate overlay. Reads route from MDT.
-## Version: 1.0.1
+## Version: 1.0.2
 ## Dependencies: MythicDungeonTools
 ## SavedVariables: MDTCheckpointsDB
 ## IconTexture: Interface\AddOns\MDTCheckpoints\MDTCheckpoints
